@@ -30,6 +30,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/students/get_modal_pelanggaran', [AbsenController::class, 'get_modal_pelanggaran'])->name('students.get_modal_pelanggaran');
     Route::post('/students/get_modal_izin', [AbsenController::class, 'get_modal_izin'])->name('students.get_modal_izin');
     Route::post('/students/set_absensi', [AbsenController::class, 'set_absensi'])->name('students.set_absensi');
+    Route::post('/students/set_absensi2', [AbsenController::class, 'set_absensi2'])->name('students.set_absensi2');
     Route::post('/students/set_pelanggaran', [AbsenController::class, 'set_pelanggaran'])->name('students.set_pelanggaran');
 
     Route::get('/enroll', [EnrollController::class, 'index'])->name('enroll');

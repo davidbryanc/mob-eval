@@ -169,27 +169,24 @@
 		return this.replace(/^\s+|\s+$/g,"");
 	}
 
+	$.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+
 	function send_absensi(nrp, absen){
-		var alasan = null;
-		if (absen == 2) {
-			if (document.getElementById('alasan_'+nrp).value.trim().length < 1) {
-				alert("Anda belum mengisi alasan ijin !");
-				return;
-			} else {
-				alasan = document.getElementById('alasan_'+nrp).value;
-				$('#modal_ijin').modal('hide');
-			}
-		}
+		if (!confirm("Are you sure?")) return
 		var idsesi = $('#sesi').val();
 		$('#status_'+nrp).html("<img src=\"{{asset('assets/img/loading.gif')}}\" width=\"18px\" alt=\"\">");
 		$.ajax({
 			type:'POST',
-			url:'{{route("students.set_absensi")}}',
-			data:{'_token':'{{csrf_token()}}',
+			url:'{{route("students.set_absensi2")}}',
+			data:{
+				'_token':'<?php echo csrf_token() ?>',
 				'nrp':nrp,
 				'absen':absen,
 				'idsesi':idsesi,
-				'alasan':alasan,
 				},
 			success: function(data){
 				$('#status_'+nrp).html(data.msg);

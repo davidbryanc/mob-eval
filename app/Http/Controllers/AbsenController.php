@@ -97,32 +97,46 @@ class AbsenController extends Controller
         $idsesi = $request->get("idsesi");
         $absensi = Absen::where('maharu_nrp', $request->nrp)->where('sesiAcara_idSesi', $idsesi)->where('absen', 2)->first();
         $alasan = "";
+        $file = null;
         if ($absensi != null) {
             $alasan = $absensi->alasan_izin;
+            $file = $absensi->bukti_izin;
         }
         return response()->json(array(
-            'msg'=>view('modal_izin', compact('alasan', 'mahasiswa', 'idsesi'))->render(),
+            'msg'=>view('modal_izin', compact('alasan', 'mahasiswa', 'idsesi', 'file'))->render(),
         ),200);
     }
 
     public function set_absensi(Request $request){
+        $request->validate([
+            'bukti'=> 'required|file|max:3072',
+            'alasan'=> 'required'
+        ]);
+
 		$nrp = $request->get("nrp");
-        $absen = $request->get("absen");
+        $absen = (int)$request->get("absen");
         $idsesi = $request->get("idsesi");
         $alasan = $request->get("alasan");
         $sesi = Sesi::find($idsesi);
 
-        $html = "";
+        $fileName = null;
         // Cek data absen mahasiswa sekarang sudah pernah ada atau tidak
         $absensi = Absen::where('maharu_nrp', $nrp)->where('sesiAcara_idSesi', $idsesi)->first();
         $user = Auth::user();
 
+
         if ($absensi != null) {
             // Jika sudah pernah ada data sebelumnya, lakukan modifikasi
-            $saved = DB::table('mahasiswa_absen_sesiacara')
+            // tambah bukti absensi
+            $imgFolder = "files";
+            $imgFile = time() . "_" . $request->file('bukti')->getClientOriginalName();
+            $request->file('bukti')->move($imgFolder, $imgFile);
+            $fileName = $imgFile;
+
+            DB::table('mahasiswa_absen_sesiacara')
                 ->where('maharu_nrp', $nrp)
                 ->where('sesiAcara_idSesi', $idsesi)
-                ->update(['absen' => $absen, 'updater' => $user->username, 'alasan_izin' => $alasan,'waktuupdate' => date('Y-m-d H:i:s')]);
+                ->update(['absen' => $absen, 'bukti_izin' => $fileName, 'updater' => $user->username, 'alasan_izin' => $alasan,'waktuupdate' => date('Y-m-d H:i:s')]);
         }
         else {
             // Jika belum pernah ada data sebelumnya, tambahkan data baru
@@ -134,8 +148,60 @@ class AbsenController extends Controller
             $absensi->updater = $user->username;
             $absensi->waktuupdate = date('Y-m-d H:i:s');
             $absensi->tahunMOB_idTahunMOB = $sesi->tahunMOB_idTahunMOB;
+
+            //tambah bukti absensi
+            $imgFolder = "files";
+            $imgFile = time() . "_" . $request->file('bukti')->getClientOriginalName();
+            $request->file('bukti')->move($imgFolder, $imgFile);
+            $absensi->bukti_izin = $imgFile;    
+
             $absensi->save();
         }
+        
+        return redirect()->back();
+	}
+
+    public function set_absensi2(Request $request){
+        $nrp = $request->get("nrp");
+        $absen = (int)$request->get("absen");
+        $idsesi = $request->get("idsesi");
+        $alasan = $request->get("alasan");
+        $sesi = Sesi::find($idsesi);
+
+        $html = "";
+
+        $absensi = Absen::where('maharu_nrp', $nrp)->where('sesiAcara_idSesi', $idsesi)->first();
+        $nama_file = $absensi->bukti_izin;
+        // var_dump($nama_file);
+        $user = Auth::user();
+
+        if ($absensi != null) {
+            // Jika sudah pernah ada data sebelumnya, lakukan modifikasi
+
+            DB::table('mahasiswa_absen_sesiacara')
+                ->where('maharu_nrp', $nrp)
+                ->where('sesiAcara_idSesi', $idsesi)
+                ->update(['absen' => $absen, 'bukti_izin' => null, 'updater' => $user->username, 'alasan_izin' => $alasan,'waktuupdate' => date('Y-m-d H:i:s')]);
+        }
+        else {
+            // Jika belum pernah ada data sebelumnya, tambahkan data baru
+            $absensi = new Absen();
+            $absensi->maharu_nrp = $nrp;
+            $absensi->sesiAcara_idSesi = $idsesi;
+            $absensi->absen = $absen;
+            $absensi->alasan_izin = $alasan;
+            $absensi->updater = $user->username;
+            $absensi->waktuupdate = date('Y-m-d H:i:s');
+            $absensi->tahunMOB_idTahunMOB = $sesi->tahunMOB_idTahunMOB;
+            $absensi->bukti_absen = null;
+
+            $absensi->save();
+        }
+        if($nama_file != null){
+            $image_path = public_path().'/files/'.$nama_file;
+            unlink($image_path);
+        }
+
         if ($absen == 0) {
             $html = "<span class=\"iconify text-danger\" data-icon=\"mdi:check-bold\" data-inline=\"false\"></span>";
         } elseif ($absen == 1) {
@@ -148,7 +214,7 @@ class AbsenController extends Controller
             'msg'=>$html,
             'alasan'=>$alasan,
         ),200);
-	}
+    }
 
     public function set_pelanggaran(Request $request){
 		$nrp = $request->get("nrp");
