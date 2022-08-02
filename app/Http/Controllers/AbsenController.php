@@ -171,13 +171,13 @@ class AbsenController extends Controller
         $html = "";
 
         $absensi = Absen::where('maharu_nrp', $nrp)->where('sesiAcara_idSesi', $idsesi)->first();
-        $nama_file = $absensi->bukti_izin;
+        $nama_file = null;
         // var_dump($nama_file);
         $user = Auth::user();
 
         if ($absensi != null) {
             // Jika sudah pernah ada data sebelumnya, lakukan modifikasi
-
+            $nama_file = $absensi->bukti_izin;
             DB::table('mahasiswa_absen_sesiacara')
                 ->where('maharu_nrp', $nrp)
                 ->where('sesiAcara_idSesi', $idsesi)
@@ -193,7 +193,7 @@ class AbsenController extends Controller
             $absensi->updater = $user->username;
             $absensi->waktuupdate = date('Y-m-d H:i:s');
             $absensi->tahunMOB_idTahunMOB = $sesi->tahunMOB_idTahunMOB;
-            $absensi->bukti_absen = null;
+            $absensi->bukti_izin = null;
 
             $absensi->save();
         }
