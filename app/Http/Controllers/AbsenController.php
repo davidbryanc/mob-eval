@@ -109,8 +109,7 @@ class AbsenController extends Controller
 
     public function set_absensi(Request $request){
         $request->validate([
-            'bukti'=> 'required|file|max:3072',
-            'alasan'=> 'required'
+            'bukti'=>'required|mimes:pdf,jpg,png,jpeg|max:512',
         ]);
 
 		$nrp = $request->get("nrp");
@@ -130,6 +129,7 @@ class AbsenController extends Controller
             // tambah bukti absensi
             $imgFolder = "files";
             $imgFile = time() . "_" . $request->file('bukti')->getClientOriginalName();
+            // dd(pathinfo($imgFile, PATHINFO_EXTENSION));
             $request->file('bukti')->move($imgFolder, $imgFile);
             $fileName = $imgFile;
 
